@@ -21,11 +21,14 @@ working file means researching real values (`adb shell getprop` on a real
 device, or a public device-properties database), not inventing them.
 
 a bad `.brd` can't break the app, though: today it only changes what the
-host reports, it never reaches the guest android system, on purpose, since
-unread values on a boot path are a known route to a silent boot failure.
-aras's own loader is meant to carry it through to the guest as a live
-pipe, the only way to change identity without building a new guest image,
-tracked separately from what `board` covers here, not yet landed.
+host reports. it's deliberately never dropped onto the guest's kernel boot
+arguments, an argument nothing on the guest reads is a known route to a
+silent boot failure, so that specific path stays untouched. reaching the
+guest at all means aras's own loader carrying it through a live pipe a
+guest-side service actually reads, a different mechanism than a boot
+argument, not yet landed, tracked separately from what `board` covers
+here, but it's the only way to change identity without building a new
+guest image.
 
 ## what a `.brd` file can and can't change
 
