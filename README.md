@@ -27,6 +27,16 @@ getprop` on a real device (or a public device-properties database) is where
 those values come from. board has no way to verify a value is real, only
 that it's well-formed, so that research is on whoever creates the file.
 
+a correction, so this doesn't get overstated: today, a bad or made-up `.brd`
+cannot bootloop or otherwise break the app. it only changes what the host
+reports about itself, it never reaches the guest android system at all, on
+purpose, because unread identity values on a boot command line are a known
+way to cause a silent boot failure that looks like something else entirely.
+that's exactly why they're kept apart today. if a future version ever wires
+`.brd` values into the guest boot path, that risk becomes real, which is
+one more reason to treat these as researched values and not guesses, even
+though nothing enforces that today.
+
 ## what a `.brd` file can and can't change
 
 **can:** brand, manufacturer, model name, device codename. the cosmetic
