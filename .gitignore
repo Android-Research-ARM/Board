@@ -1,0 +1,11 @@
+.DS_Store
+
+# sample .brd files are local test fixtures, never shipped, board never
+# ships pre-made brand files (see readme). the asus sample especially must
+# never enter this repo's history.
+/tests/samples/
+
+# build output
+/Build/
+/build/
+*.o
