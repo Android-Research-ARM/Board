@@ -37,6 +37,31 @@ that's exactly why they're kept apart today. if a future version ever wires
 one more reason to treat these as researched values and not guesses, even
 though nothing enforces that today.
 
+## the guest side is a known, open gap
+
+right now a `.brd` only changes what the host app reports about itself. it
+does not reach the android system running inside the emulator at all, so an
+app running inside android today still sees whatever identity that guest
+image was built with, not the applied `.brd`. closing that gap is real,
+separate work, not yet built, and it splits into two different approaches
+with different tradeoffs:
+
+- **statically rebrand the guest image itself**, so a stock install reports
+  the same made-up default end to end. smaller, safer, and does not touch
+  the guest boot path at all.
+- **a live channel so the guest can read the applied `.brd` at runtime**,
+  instead of baking a value into the image. more useful (it would track
+  whatever `.brd` is currently applied, not just a fixed default), but
+  genuinely harder: android's device-identity properties are normally read
+  once, very early in boot, from the image itself, not queried live by
+  apps. making them live would need something running inside the guest,
+  early enough in boot to matter, actually reading that channel, not just a
+  socket existing. skipping that step is exactly the kind of thing that
+  causes a silent boot failure that looks like an unrelated bug, so it is
+  being treated as its own deliberate piece of work, not folded in quietly.
+
+the safer, smaller option is expected to land first.
+
 ## what a `.brd` file can and can't change
 
 **can:** brand, manufacturer, model name, device codename. the cosmetic
