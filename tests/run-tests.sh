@@ -115,10 +115,9 @@ for name in $(python3 "$forge" list); do
   else
     # `|| true` because validate exits 1 here by design, and with `set -o
     # pipefail` the assignment would otherwise inherit that and trip `set -e`.
-    # tolerate either separator after INVALID, the CLI's wording has changed
-    # once already and a cosmetic reword should not make this line print the
-    # whole path back at you.
-    reason="$({ "$board" validate "$file" 2>&1 || true; } | sed -E 's/.*INVALID( —|:) //')"
+    # strip everything up to and including the "INVALID: " prefix, so the PASS
+    # line shows just the reason rather than the whole temp path.
+    reason="$({ "$board" validate "$file" 2>&1 || true; } | sed -E 's/.*INVALID: //')"
     ok "$name: rejected ($reason)"
   fi
   # inspect must refuse it too: the host app shows the user a file's contents

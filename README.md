@@ -48,6 +48,18 @@ malformed file. a small binary layout with a version header rejects garbage
 naturally and makes `.brd` files unambiguous to identify, see
 `brd_format.h` in this directory for the exact format spec.
 
+there's also a category difference json would hide. a `.brd` is not a
+settings file the app just reads on startup the way it might read a
+preferences json. it's device-identity data, the same kind of thing a real
+phone bakes into its own build.prop inside the system image itself, not
+something meant to be casually flipped in a text editor after the fact. on
+a real device those values live in a partition, not a config file, exactly
+because they're not meant to be edited casually. `.brd` doesn't go that
+far, it stays a plain file, editable by anyone who authors one on purpose,
+but the format should look and feel like what it actually is: identity
+data, not a settings toggle. json's whole design point is "quick to open
+and change", which is the wrong shape for that.
+
 ## every file has an author, always
 
 board requires a name on every file it creates, it defaults to your local
