@@ -5,6 +5,14 @@
 # never enter this repo's history.
 /tests/samples/
 
+# the test suite itself (including forge_brd.py, which deliberately writes
+# malformed/hostile .brd files to prove the decoder rejects them) stays local.
+# real, useful test coverage, just not something to publish alongside the
+# public repo without more thought about how a "forge" tool reads out of
+# context. keep using it locally: make test still works from a checkout that
+# has it, it's just not tracked or shipped from here on.
+/tests/
+
 # build output
 /Build/
 /build/
