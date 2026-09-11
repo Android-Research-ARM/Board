@@ -1,0 +1,22 @@
+# Never ship .brd files. board authors brand files itself; it never ships
+# pre-made brand files (see README.md), and every existing *.brd that entered
+# this repo did so by accident. A blanket deny here is the structural
+# guarantee: even if one is added to the index by mistake, a fresh clone will
+# never push one.
+*.brd
+
+.DS_Store
+
+# Sample .brd files are local test fixtures, never shipped. The test suite
+# (tests/run-tests.sh + tests/forge_brd.py, which deliberately writes
+# malformed/hostile .brd files to prove the decoder rejects them) stays local
+# too: real, useful test coverage, just not something to publish alongside the
+# public repo without more thought about how a "forge" tool reads out of
+# context. Keep using it locally: `make test` still works from a checkout
+# that has it, it's just not tracked or shipped from here on.
+/tests/
+
+# Build output
+/Build/
+/build/
+*.o
