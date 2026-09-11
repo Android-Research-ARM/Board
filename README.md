@@ -97,6 +97,10 @@ A label-only profile leaves the corresponding native values unchanged.
 
 ARAS only accepts values supported by its graphics stack. A profile cannot add graphics capabilities that the underlying renderer does not provide.
 
+The ARAS default is `196609` (ES 3.1). ES 3.2 is **not** achievable on this stack: it requires geometry shaders, which Metal provides no equivalent for, so ANGLE cannot expose `GL_EXT_geometry_shader` and therefore cannot advertise ES 3.2. Declaring 3.2 anyway would let an app start and then break on the first 3.2 entry point — worse than being rejected at the door. An override is honored only when it matches what the driver actually supports; this value is settable for measurement, not for making an unsupported claim.
+
+The same default applies whether the identity comes from a profile override or from ARAS's built-in identity.
+
 ---
 
 ## What `.brd` does not change
