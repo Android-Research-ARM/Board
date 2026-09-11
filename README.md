@@ -273,6 +273,34 @@ See `brd_format.h` for the exact format specification.
 
 ---
 
+## Intended use
+
+`board` is provided as a development and compatibility-testing tool.
+
+Device profiles allow developers to reproduce software-reported Android device configurations when testing applications across different environments.
+
+Users are responsible for how they use profiles and for complying with the terms, licenses, policies, and requirements applicable to the applications and services they test.
+
+A profile does not provide physical device capabilities, manufacturer authorization, Google certification, or hardware-backed security credentials.
+
+Changing software-reported device properties does not guarantee that an application will accept an environment, and does not change the application's own security, licensing, account, anti-abuse, or integrity requirements.
+
+Developers testing applications that enforce environment or device requirements should use the application's supported testing mechanisms where available.
+
+---
+
+## User-created profiles
+
+`board` does not distribute manufacturer profiles or claim that user-created profiles are official, authorized, certified, or endorsed by any device manufacturer.
+
+Profile metadata is self-reported by its creator.
+
+Device names, manufacturers, product names, trademarks, and other identifiers contained in user-created profiles remain the property of their respective owners.
+
+`board` does not grant any trademark, certification, distribution, or authorization rights to those names or identifiers.
+
+---
+
 ## Building
 
 ```sh
