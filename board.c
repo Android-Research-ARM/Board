@@ -62,6 +62,10 @@ static void usage(FILE *out) {
         "  --build-id <text>          e.g. ASUS_AI2501H-user 15 (ro.build.display.id)\n"
         "  --gles-version <token>     e.g. 196610        (ro.opengles.version, 196610 = ES 3.2)\n"
         "\n"
+        "optional carrier identity (format version 4):\n"
+        "  --carrier <token>          e.g. XTC           (ro.boot.carrierid)\n"
+        "  --sales-code <token>       e.g. XTC           (ro.boot.sales_code / csc)\n"
+        "\n"
         "The chip and GPU identity must be set together, or not at all: app\n"
         "compatibility checks read the chip model and the GPU model as a matched\n"
         "pair, so setting one without the other would describe a device that does\n"
@@ -93,6 +97,8 @@ static void print_identity(const brd_identity *identity, const char *path) {
     if (identity->hardware[0]) printf("  hardware      %s\n", identity->hardware);
     if (identity->build_id[0]) printf("  build id      %s\n", identity->build_id);
     if (identity->opengles_version[0]) printf("  gles version  %s\n", identity->opengles_version);
+    if (identity->carrier[0]) printf("  carrier       %s\n", identity->carrier);
+    if (identity->sales_code[0]) printf("  sales code    %s\n", identity->sales_code);
 }
 
 /* ------------------------------------------------------------------ create */
@@ -167,6 +173,8 @@ static char *slot_for(brd_identity *identity, brd_field_id field) {
         case BRD_FIELD_HARDWARE:         return identity->hardware;
         case BRD_FIELD_BUILD_ID:         return identity->build_id;
         case BRD_FIELD_OPENGLES_VERSION: return identity->opengles_version;
+        case BRD_FIELD_CARRIER:          return identity->carrier;
+        case BRD_FIELD_SALES_CODE:       return identity->sales_code;
     }
     return NULL;
 }
@@ -190,6 +198,8 @@ static int command_create(int argc, char **argv) {
         { "--hardware",         BRD_FIELD_HARDWARE },
         { "--build-id",         BRD_FIELD_BUILD_ID },
         { "--gles-version",     BRD_FIELD_OPENGLES_VERSION },
+        { "--carrier",          BRD_FIELD_CARRIER },
+        { "--sales-code",       BRD_FIELD_SALES_CODE },
     };
 
     for (int i = 0; i < argc; i++) {
@@ -306,12 +316,15 @@ static int command_view(const char *path) {
     int has_chip = identity.soc_model[0] != '\0';
     int has_v3 = identity.board[0] != '\0' || identity.hardware[0] != '\0' ||
                  identity.build_id[0] != '\0' || identity.opengles_version[0] != '\0';
-    unsigned version = has_v3 ? BRD_FORMAT_VERSION : (has_chip ? 2u : BRD_FORMAT_VERSION_MIN);
+    int has_v4 = identity.carrier[0] != '\0' || identity.sales_code[0] != '\0';
+    unsigned version = has_v4 ? BRD_FORMAT_VERSION : (has_v3 ? 3u : (has_chip ? 2u : BRD_FORMAT_VERSION_MIN));
     unsigned fields = BRD_FIELD_REQUIRED + (has_chip ? BRD_FIELD_SOC_GROUP : 0u);
     if (identity.board[0]) fields++;
     if (identity.hardware[0]) fields++;
     if (identity.build_id[0]) fields++;
     if (identity.opengles_version[0]) fields++;
+    if (identity.carrier[0]) fields++;
+    if (identity.sales_code[0]) fields++;
 
     printf("=== .brd file details ===\n");
     printf("File:           %s\n", path);
@@ -345,6 +358,10 @@ static int command_view(const char *path) {
         printf("  build id      id=%d  len=%zu  charset=text\n", BRD_FIELD_BUILD_ID, strlen(identity.build_id));
     if (identity.opengles_version[0])
         printf("  gles version  id=%d  len=%zu  charset=token\n", BRD_FIELD_OPENGLES_VERSION, strlen(identity.opengles_version));
+    if (identity.carrier[0])
+        printf("  carrier       id=%d  len=%zu  charset=token\n", BRD_FIELD_CARRIER, strlen(identity.carrier));
+    if (identity.sales_code[0])
+        printf("  sales code    id=%d  len=%zu  charset=token\n", BRD_FIELD_SALES_CODE, strlen(identity.sales_code));
 
     return 0;
 }
@@ -363,17 +380,21 @@ static int command_validate(const char *path) {
     int has_chip = identity.soc_model[0] != '\0';
     int has_v3 = identity.board[0] != '\0' || identity.hardware[0] != '\0' ||
                  identity.build_id[0] != '\0' || identity.opengles_version[0] != '\0';
-    unsigned version = has_v3 ? BRD_FORMAT_VERSION : (has_chip ? 2u : BRD_FORMAT_VERSION_MIN);
+    int has_v4 = identity.carrier[0] != '\0' || identity.sales_code[0] != '\0';
+    unsigned version = has_v4 ? BRD_FORMAT_VERSION : (has_v3 ? 3u : (has_chip ? 2u : BRD_FORMAT_VERSION_MIN));
     unsigned fields = BRD_FIELD_REQUIRED + (has_chip ? BRD_FIELD_SOC_GROUP : 0u);
     if (identity.board[0]) fields++;
     if (identity.hardware[0]) fields++;
     if (identity.build_id[0]) fields++;
     if (identity.opengles_version[0]) fields++;
+    if (identity.carrier[0]) fields++;
+    if (identity.sales_code[0]) fields++;
 
-    printf("%s: valid (format version %u, %u fields%s%s)\n", path,
+    printf("%s: valid (format version %u, %u fields%s%s%s)\n", path,
            version, fields,
            has_chip ? ", chip identity set" : "",
-           has_v3 ? ", extended identity set" : "");
+           has_v3 ? ", extended identity set" : "",
+           has_v4 ? ", carrier identity set" : "");
     return 0;
 }
 

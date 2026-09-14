@@ -69,11 +69,11 @@ extern "C" {
 #define BRD_MAGIC_LENGTH      8u
 #define BRD_HEADER_LENGTH     16u
 #define BRD_TRAILER_LENGTH    4u   /* crc32 */
-#define BRD_FORMAT_VERSION    3u   /* what brd_encode() writes for a file carrying v3 fields */
+#define BRD_FORMAT_VERSION    4u   /* what brd_encode() writes for a file carrying v4 fields */
 #define BRD_FORMAT_VERSION_MIN 1u  /* the oldest version brd_decode() still reads   */
 #define BRD_MAX_VALUE_BYTES   64u
 #define BRD_MAX_FILE_BYTES    4096u
-#define BRD_FIELD_COUNT       13u  /* field ids this format defines            */
+#define BRD_FIELD_COUNT       15u  /* field ids this format defines            */
 #define BRD_FIELD_REQUIRED    6u   /* ids 1-6, present in every valid file     */
 #define BRD_FIELD_SOC_GROUP   3u   /* ids 7-9, present together or not at all  */
 
@@ -81,7 +81,8 @@ extern "C" {
 /// this is what keeps every other technical property out of reach structurally
 /// rather than by convention. ids 1-6 are required in every file; ids 7-9 are
 /// the optional chip group and are valid only together; ids 10-13 are optional
-/// extended technical properties added in format version 3.
+/// extended technical properties added in format version 3; ids 14-15 are optional
+/// carrier and regional properties added in format version 4.
 typedef enum {
     BRD_FIELD_BRAND            = 1,  /* ro.product.brand,        token charset */
     BRD_FIELD_MANUFACTURER     = 2,  /* ro.product.manufacturer, text charset  */
@@ -98,7 +99,10 @@ typedef enum {
     BRD_FIELD_BOARD            = 10, /* ro.product.board / platform, token     */
     BRD_FIELD_HARDWARE         = 11, /* ro.hardware,                 token     */
     BRD_FIELD_BUILD_ID         = 12, /* ro.build.display.id,         text      */
-    BRD_FIELD_OPENGLES_VERSION = 13  /* ro.opengles.version,         token     */
+    BRD_FIELD_OPENGLES_VERSION = 13, /* ro.opengles.version,         token     */
+    /* carrier and regional identity, added in format version 4. each optional. */
+    BRD_FIELD_CARRIER          = 14, /* ro.boot.carrierid,           token     */
+    BRD_FIELD_SALES_CODE       = 15  /* ro.boot.sales_code / csc,    token     */
 } brd_field_id;
 
 /// the three ids that make up the optional chip group, in authoring order.
@@ -106,7 +110,7 @@ typedef enum {
 /// the three ids out again, so "which fields are paired" has one definition.
 #define BRD_SOC_GROUP_IDS { BRD_FIELD_SOC_MANUFACTURER, BRD_FIELD_SOC_MODEL, BRD_FIELD_GPU_MODEL }
 
-/// the complete data model. thirteen fixed strings and nothing else, deliberately
+/// the complete data model. fifteen fixed strings and nothing else, deliberately
 /// not a dictionary, a key-value list, or anything else open-ended, so there is
 /// no representation in which an unexpected field could survive decoding.
 /// values are nul-terminated for c convenience; the wire format is length-prefixed.
@@ -125,6 +129,8 @@ typedef struct {
     char hardware[BRD_MAX_VALUE_BYTES + 1];
     char build_id[BRD_MAX_VALUE_BYTES + 1];
     char opengles_version[BRD_MAX_VALUE_BYTES + 1];
+    char carrier[BRD_MAX_VALUE_BYTES + 1];
+    char sales_code[BRD_MAX_VALUE_BYTES + 1];
 } brd_identity;
 
 typedef enum {

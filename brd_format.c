@@ -43,11 +43,12 @@ static int brd_is_text_byte(unsigned char c) {
 
 static int brd_field_is_token(brd_field_id field) {
     return field == BRD_FIELD_BRAND || field == BRD_FIELD_MODEL || field == BRD_FIELD_CODENAME ||
-           field == BRD_FIELD_BOARD || field == BRD_FIELD_HARDWARE || field == BRD_FIELD_OPENGLES_VERSION;
+           field == BRD_FIELD_BOARD || field == BRD_FIELD_HARDWARE || field == BRD_FIELD_OPENGLES_VERSION ||
+           field == BRD_FIELD_CARRIER || field == BRD_FIELD_SALES_CODE;
 }
 
 static int brd_field_is_known(unsigned id) {
-    return id >= BRD_FIELD_BRAND && id <= BRD_FIELD_OPENGLES_VERSION;
+    return id >= BRD_FIELD_BRAND && id <= BRD_FIELD_SALES_CODE;
 }
 
 /* the optional chip group. one definition of "which three are paired", used by
@@ -61,6 +62,10 @@ static int brd_field_is_soc(unsigned id) {
 
 static int brd_field_is_v3(unsigned id) {
     return id >= BRD_FIELD_BOARD && id <= BRD_FIELD_OPENGLES_VERSION;
+}
+
+static int brd_field_is_v4(unsigned id) {
+    return id >= BRD_FIELD_CARRIER && id <= BRD_FIELD_SALES_CODE;
 }
 
 /* ------------------------------------------------------------------- crc32 */
@@ -142,6 +147,8 @@ const char *brd_field_label(brd_field_id field) {
         case BRD_FIELD_HARDWARE:         return "hardware";
         case BRD_FIELD_BUILD_ID:         return "build id";
         case BRD_FIELD_OPENGLES_VERSION: return "gles version";
+        case BRD_FIELD_CARRIER:          return "carrier";
+        case BRD_FIELD_SALES_CODE:       return "sales code";
     }
     return "unknown";
 }
@@ -162,6 +169,8 @@ const char *brd_identity_value(const brd_identity *identity, brd_field_id field)
         case BRD_FIELD_HARDWARE:         return identity->hardware;
         case BRD_FIELD_BUILD_ID:         return identity->build_id;
         case BRD_FIELD_OPENGLES_VERSION: return identity->opengles_version;
+        case BRD_FIELD_CARRIER:          return identity->carrier;
+        case BRD_FIELD_SALES_CODE:       return identity->sales_code;
     }
     return NULL;
 }
@@ -183,6 +192,8 @@ static char *brd_identity_slot(brd_identity *identity, brd_field_id field) {
         case BRD_FIELD_HARDWARE:         return identity->hardware;
         case BRD_FIELD_BUILD_ID:         return identity->build_id;
         case BRD_FIELD_OPENGLES_VERSION: return identity->opengles_version;
+        case BRD_FIELD_CARRIER:          return identity->carrier;
+        case BRD_FIELD_SALES_CODE:       return identity->sales_code;
     }
     return NULL;
 }
@@ -255,7 +266,7 @@ brd_status brd_decode_detail(const uint8_t *bytes, size_t length, brd_identity *
        "all six present" sweep after the loop still catches a short file. the
        loop cannot run away: each record needs at least 3 bytes and overrunning
        the payload returns BRD_ERR_BAD_LENGTH. */
-    int seen[BRD_FIELD_OPENGLES_VERSION + 1];
+    int seen[BRD_FIELD_SALES_CODE + 1];
     memset(seen, 0, sizeof(seen));
 
     size_t offset = BRD_HEADER_LENGTH;
@@ -276,6 +287,8 @@ brd_status brd_decode_detail(const uint8_t *bytes, size_t length, brd_identity *
         if (brd_field_is_soc(id) && version < 2u) return BRD_ERR_UNKNOWN_FIELD;
         /* extended technical properties arrived in format version 3. */
         if (brd_field_is_v3(id) && version < 3u) return BRD_ERR_UNKNOWN_FIELD;
+        /* carrier and regional properties arrived in format version 4. */
+        if (brd_field_is_v4(id) && version < 4u) return BRD_ERR_UNKNOWN_FIELD;
         if (seen[id]) return BRD_ERR_DUPLICATE_FIELD;
         seen[id] = 1;
 
@@ -359,7 +372,7 @@ static brd_status brd_encode_field_plan(const brd_identity *identity,
     if (present == BRD_FIELD_SOC_GROUP)
         for (size_t i = 0; i < BRD_FIELD_SOC_GROUP; i++) plan[count++] = kBrdSocGroup[i];
 
-    for (unsigned id = BRD_FIELD_BOARD; id <= BRD_FIELD_OPENGLES_VERSION; id++) {
+    for (unsigned id = BRD_FIELD_BOARD; id <= BRD_FIELD_SALES_CODE; id++) {
         const char *value = brd_identity_value(identity, (brd_field_id)id);
         if (value && value[0]) plan[count++] = (brd_field_id)id;
     }
@@ -390,14 +403,16 @@ brd_status brd_encode(const brd_identity *identity, uint8_t *out, size_t capacit
     if (total > (size_t)BRD_MAX_FILE_BYTES) return BRD_ERR_TOO_LARGE;
     if (total > capacity) return BRD_ERR_IO;
 
-    /* version 1 for a label-only file; version 2 for chip group; version 3 for extended fields */
+    /* version 1 for a label-only file; version 2 for chip group; version 3 for extended fields; version 4 for carrier */
     uint16_t version = (uint16_t)BRD_FORMAT_VERSION_MIN;
     for (size_t i = 0; i < plan_count; i++) {
-        if (brd_field_is_v3((unsigned)plan[i])) {
+        if (brd_field_is_v4((unsigned)plan[i])) {
             version = (uint16_t)BRD_FORMAT_VERSION;
             break;
         }
-        if (brd_field_is_soc((unsigned)plan[i])) {
+        if (brd_field_is_v3((unsigned)plan[i]) && version < 3u) {
+            version = 3u;
+        } else if (brd_field_is_soc((unsigned)plan[i]) && version < 2u) {
             version = 2u;
         }
     }
